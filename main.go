@@ -1,40 +1,24 @@
 package main
 
 import (
-	"context"
-	"fmt"
+	"cloudflare-takehome/routes"
 	"log"
-	"time"
+	"net/http"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"github.com/fatih/color"
+	"github.com/rs/cors"
 )
 
 func main() {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	color.Cyan("Server running on localhost: 8080")
 
-	mongoClient, err := mongo.Connect(
-		ctx,
-		options.Client().ApplyURI("mongodb://root:cloudflare@localhost:27017/"),
-	)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	router := routes.Routes()
+	c := cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders: []string{"Content-Type", "Origin", "Accept", "*"},
+	})
 
-	defer func() {
-		cancel()
-		if err := mongoClient.Disconnect(ctx); err != nil {
-			log.Fatalf("mongodb disconnect error : %v", err)
-		}
-	}()
-
-	if err != nil {
-		log.Fatalf("connection error :%v", err)
-		return
-	}
-
-	err = mongoClient.Ping(ctx, readpref.Primary())
-	if err != nil {
-		log.Fatalf("ping mongodb error :%v", err)
-		return
-	}
-	fmt.Println("ping success")
+	handler := c.Handler(router)
+	http.ListenAndServe(":8080", handler)
 }
