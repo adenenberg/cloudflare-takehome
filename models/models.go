@@ -13,6 +13,11 @@ type ShortenedURL struct {
 	ExpirationDate primitive.DateTime `json:"expiration_date,omitempty" bson:"expiration_date,omitempty" validate:"datetime"`
 }
 
+type URLStats struct {
+	ID          string               `json:"_id,omitempty" bson:"_id,omitempty"`
+	AccessTimes []primitive.DateTime `json:"access_times,omitempty" bson:"access_times,omitempty"`
+}
+
 func (s ShortenedURL) GenerateShortUrl() string {
 	return fmt.Sprintf("localhost:8080/go/%s", s.ID)
 }

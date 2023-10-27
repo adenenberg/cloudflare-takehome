@@ -15,9 +15,14 @@ import (
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var client = db.Connect()
+
+const dbName = "cloudflare"
+const urlTable = "shortened_url"
+const statsTable = "url_stats"
 
 var PingEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
@@ -42,7 +47,7 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	shortenedURL.ID = id
 	shortenedURL.CreationDate = primitive.NewDateTimeFromTime(time.Now().UTC())
 
-	collection := client.Database("cloudflare").Collection("shortened_url")
+	collection := client.Database(dbName).Collection(urlTable)
 	result, err := collection.InsertOne(context.Background(), shortenedURL)
 	if err != nil {
 		color.Red("Failed to insert into DB: %s", err)
@@ -58,13 +63,20 @@ var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 	params := mux.Vars(r)
 	var shortenedURL models.ShortenedURL
 
-	collection := client.Database("cloudflare").Collection("shortened_url")
+	collection := client.Database(dbName).Collection(urlTable)
 	err := collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}}).Decode(&shortenedURL)
 	if err != nil {
 		color.Red("Record not found: %s", err)
 		//todo err handling
 		return
 	}
+
+	statsCollection := client.Database(dbName).Collection(statsTable)
+	statsCollection.UpdateByID(context.Background(), params["id"],
+		bson.M{"$push": bson.M{
+			"access_times": primitive.NewDateTimeFromTime(time.Now().UTC()),
+		}},
+		options.Update().SetUpsert(true))
 
 	http.Redirect(w, r, shortenedURL.OriginalURL, http.StatusTemporaryRedirect)
 })
