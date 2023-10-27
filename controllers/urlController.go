@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/gorilla/mux"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -44,4 +46,19 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 
 	color.White("Inserted new short url: %s", result.InsertedID)
 	handlers.SuccessResponse(shortenedURL.GenerateShortUrl(), w)
+})
+
+var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var shortenedURL models.ShortenedURL
+
+	collection := client.Database("cloudflare").Collection("shortened_url")
+	err := collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}}).Decode(&shortenedURL)
+	if err != nil {
+		color.Red("Record not found: %s", err)
+		//todo err handling
+		return
+	}
+
+	http.Redirect(w, r, shortenedURL.OriginalURL, http.StatusTemporaryRedirect)
 })

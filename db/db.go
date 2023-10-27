@@ -14,7 +14,7 @@ import (
 func Connect() *mongo.Client {
 	ctx := context.Background()
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/") //needs to be mongo
+	clientOptions := options.Client().ApplyURI("mongodb://root:cloudflare@localhost:27017/")
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal("Connection Failed to Database")
