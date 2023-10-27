@@ -3,17 +3,16 @@ package db
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/fatih/color"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var client *mongo.Client
+// var client *mongo.Client
 
 func Connect() *mongo.Client {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx := context.Background()
 
 	clientOptions := options.Client().ApplyURI("mongodb://root:cloudflare@localhost:27017/")
 	client, err := mongo.Connect(ctx, clientOptions)
@@ -28,12 +27,11 @@ func Connect() *mongo.Client {
 		log.Fatal(err)
 	}
 
-	defer func() {
-		cancel()
-		if err := client.Disconnect(ctx); err != nil {
-			log.Fatalf("mongodb disconnect error : %v", err)
-		}
-	}()
+	// defer func() {
+	// 	if err := client.Disconnect(ctx); err != nil {
+	// 		log.Fatalf("mongodb disconnect error : %v", err)
+	// 	}
+	// }()
 
 	color.Green("Connected to Database")
 	return client
