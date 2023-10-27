@@ -68,3 +68,25 @@ var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 
 	http.Redirect(w, r, shortenedURL.OriginalURL, http.StatusTemporaryRedirect)
 })
+
+var DeleteURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var shortenedURL models.ShortenedURL
+
+	collection := client.Database("cloudflare").Collection("shortened_url")
+	err := collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}}).Decode(&shortenedURL)
+	if err != nil {
+		color.Red("Record not found: %s", err)
+		//todo err handling
+		return
+	}
+
+	_, err = collection.DeleteOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}})
+	if err != nil {
+		color.Red("Record could not be deleted: %s", err)
+		//todo err handling
+		return
+	}
+
+	handlers.SuccessResponse("Deleted", w)
+})
