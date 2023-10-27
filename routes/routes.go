@@ -12,6 +12,7 @@ func Routes() *mux.Router {
 	router.HandleFunc("/create", controllers.CreateURLEndpoint).Methods("POST")
 	router.HandleFunc("/go/{id}", controllers.GoToURLEndpoint).Methods("GET")
 	router.HandleFunc("/delete/{id}", controllers.DeleteURLEndpoint).Methods("DELETE")
+	router.HandleFunc("/stats/{id}", controllers.URLStatsEndpoint).Methods("GET")
 
 	return router
 }

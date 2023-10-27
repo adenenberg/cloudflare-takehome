@@ -6,6 +6,7 @@ import (
 	"cloudflare-takehome/models"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -85,20 +86,47 @@ var DeleteURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	params := mux.Vars(r)
 	var shortenedURL models.ShortenedURL
 
+	idFilter := bson.D{primitive.E{Key: "_id", Value: params["id"]}}
+
 	collection := client.Database("cloudflare").Collection("shortened_url")
-	err := collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}}).Decode(&shortenedURL)
+	err := collection.FindOne(context.Background(), idFilter).Decode(&shortenedURL)
 	if err != nil {
 		color.Red("Record not found: %s", err)
 		//todo err handling
 		return
 	}
 
-	_, err = collection.DeleteOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}})
+	_, err = collection.DeleteOne(context.Background(), idFilter)
 	if err != nil {
 		color.Red("Record could not be deleted: %s", err)
 		//todo err handling
 		return
 	}
 
+	statsCollection := client.Database(dbName).Collection(statsTable)
+	statsCollection.DeleteOne(context.Background(), idFilter)
+
 	handlers.SuccessResponse("Deleted", w)
+})
+
+var URLStatsEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var urlStats models.URLStats
+
+	idFilter := bson.D{primitive.E{Key: "_id", Value: params["id"]}}
+
+	statsCollection := client.Database(dbName).Collection(statsTable)
+	statsCollection.FindOne(context.Background(), idFilter).Decode(&urlStats)
+
+	start := time.Now().UTC()
+	end := start.AddDate(0, 0, -1)
+	dayCount := 0
+
+	for _, d := range urlStats.AccessTimes {
+		if d.Time().After(end) {
+			dayCount++
+		}
+	}
+
+	fmt.Println(dayCount)
 })
