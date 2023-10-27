@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/fatih/color"
@@ -31,6 +32,11 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		return
 	}
 	//todo validate
+
+	u, _ := url.Parse(shortenedURL.OriginalURL)
+	if u.Scheme == "" {
+		shortenedURL.OriginalURL = "http://" + shortenedURL.OriginalURL
+	}
 
 	id, _ := gonanoid.New()
 	shortenedURL.ID = id
