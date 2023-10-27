@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cloudflare-takehome/handlers"
 	"cloudflare-takehome/routes"
 	"log"
 	"net/http"
@@ -21,7 +22,7 @@ func main() {
 	})
 
 	handler := c.Handler(router)
-	http.ListenAndServe(":8080", handler)
+	http.ListenAndServe(":8080", handlers.LogRequest(handler))
 }
 
 // This function ensures that a number of keys are always available for the service to use.
