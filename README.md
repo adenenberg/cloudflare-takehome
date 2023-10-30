@@ -10,8 +10,13 @@ I have used Docker so that each of the pieces could be containerized and run ind
 ## Run
 **Docker is required to run**
 
+From the root of this project, the following applies:
+
 In order to run all the containers with docker, please run
 ```docker-compose up```
+
+To stop all running containers
+```docker-compose down```
 
 ## Testing
 Automated tests can be run with ```go test ./...```
