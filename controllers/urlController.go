@@ -70,17 +70,22 @@ var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 	params := mux.Vars(r)
 	var shortenedURL models.ShortenedURL
 
+	idFilter := bson.D{primitive.E{Key: "_id", Value: params["id"]}}
+
 	collection := client.Database(dbName).Collection(urlTable)
-	err := collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}}).Decode(&shortenedURL)
+	err := collection.FindOne(context.Background(), idFilter).Decode(&shortenedURL)
 	if err != nil {
 		color.Red("Record not found: %s", err)
 		handlers.ErrorResponse("Record not found", w)
 	}
 
+	//Check if URL has expired
 	now := time.Now().UTC()
 	if shortenedURL.ExpirationDate != 0 && now.After(shortenedURL.ExpirationDate.Time()) {
-		color.Red("URL expired: %s", err)
-		handlers.ErrorResponse("URL expired", w)
+		color.Red("Record not found: %s", err)
+		//Delete if expired
+		collection.DeleteOne(context.Background(), idFilter)
+		handlers.ErrorResponse("Record not found", w)
 	}
 
 	statsCollection := client.Database(dbName).Collection(statsTable)
