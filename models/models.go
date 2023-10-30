@@ -19,5 +19,5 @@ type URLStats struct {
 }
 
 func (s ShortenedURL) GenerateShortUrl() string {
-	return fmt.Sprintf("localhost:8080/go/%s", s.ID)
+	return fmt.Sprintf("/go/%s", s.ID)
 }

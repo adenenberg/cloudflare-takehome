@@ -36,7 +36,11 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 		color.Red("Failed to decode json: %s", err)
 		handlers.ErrorResponse("Request data formatted incorrectly: "+err.Error(), w)
 	}
-	//todo validate
+
+	if shortenedURL.OriginalURL == "" {
+		color.Red("Missing URL to shorten: %s", err)
+		handlers.ErrorResponse("Must include URL", w)
+	}
 
 	u, _ := url.Parse(shortenedURL.OriginalURL)
 	if u.Scheme == "" {
@@ -55,7 +59,11 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	}
 
 	color.White("Inserted new short url: %s", result.InsertedID)
-	handlers.SuccessResponse(shortenedURL.GenerateShortUrl(), w)
+	resp := map[string]string{
+		"short_url": shortenedURL.GenerateShortUrl(),
+		"key":       shortenedURL.ID,
+	}
+	handlers.SuccessResponse(resp, w)
 })
 
 var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +90,7 @@ var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		}},
 		options.Update().SetUpsert(true))
 
+	color.White("Redirecting to URL")
 	http.Redirect(w, r, shortenedURL.OriginalURL, http.StatusTemporaryRedirect)
 })
 
@@ -107,7 +116,8 @@ var DeleteURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	statsCollection := client.Database(dbName).Collection(statsTable)
 	statsCollection.DeleteOne(context.Background(), idFilter)
 
-	handlers.SuccessResponse("Deleted", w)
+	color.White("URL deleted: " + shortenedURL.ID)
+	handlers.SuccessResponse("deleted", w)
 })
 
 var URLStatsEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
