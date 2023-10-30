@@ -34,8 +34,7 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	err := json.NewDecoder(r.Body).Decode((&shortenedURL))
 	if err != nil {
 		color.Red("Failed to decode json: %s", err)
-		//todo err handling
-		return
+		handlers.ErrorResponse("Request data formatted incorrectly: "+err.Error(), w)
 	}
 	//todo validate
 
@@ -52,8 +51,7 @@ var CreateURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	result, err := collection.InsertOne(context.Background(), shortenedURL)
 	if err != nil {
 		color.Red("Failed to insert into DB: %s", err)
-		//todo err handling
-		return
+		handlers.ServerErrorResponse("Failed to insert into DB: "+err.Error(), w)
 	}
 
 	color.White("Inserted new short url: %s", result.InsertedID)
@@ -68,15 +66,13 @@ var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 	err := collection.FindOne(context.Background(), bson.D{primitive.E{Key: "_id", Value: params["id"]}}).Decode(&shortenedURL)
 	if err != nil {
 		color.Red("Record not found: %s", err)
-		//todo err handling
-		return
+		handlers.ErrorResponse("Record not found", w)
 	}
 
 	now := time.Now().UTC()
 	if shortenedURL.ExpirationDate != 0 && now.After(shortenedURL.ExpirationDate.Time()) {
 		color.Red("URL expired: %s", err)
-		//todo err handling
-		return
+		handlers.ErrorResponse("URL expired", w)
 	}
 
 	statsCollection := client.Database(dbName).Collection(statsTable)
@@ -99,15 +95,13 @@ var DeleteURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Req
 	err := collection.FindOne(context.Background(), idFilter).Decode(&shortenedURL)
 	if err != nil {
 		color.Red("Record not found: %s", err)
-		//todo err handling
-		return
+		handlers.ErrorResponse("Record not found", w)
 	}
 
 	_, err = collection.DeleteOne(context.Background(), idFilter)
 	if err != nil {
 		color.Red("Record could not be deleted: %s", err)
-		//todo err handling
-		return
+		handlers.ServerErrorResponse("Error deleting record: "+err.Error(), w)
 	}
 
 	statsCollection := client.Database(dbName).Collection(statsTable)
@@ -123,7 +117,11 @@ var URLStatsEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Requ
 	idFilter := bson.D{primitive.E{Key: "_id", Value: params["id"]}}
 
 	statsCollection := client.Database(dbName).Collection(statsTable)
-	statsCollection.FindOne(context.Background(), idFilter).Decode(&urlStats)
+	err := statsCollection.FindOne(context.Background(), idFilter).Decode(&urlStats)
+	if err != nil {
+		color.Red("Record not found: %s", err)
+		handlers.ErrorResponse("Record not found", w)
+	}
 
 	now := time.Now().UTC()
 	day := now.AddDate(0, 0, -1)
