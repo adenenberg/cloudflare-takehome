@@ -72,10 +72,17 @@ var GoToURLEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	now := time.Now().UTC()
+	if shortenedURL.ExpirationDate != 0 && now.After(shortenedURL.ExpirationDate.Time()) {
+		color.Red("URL expired: %s", err)
+		//todo err handling
+		return
+	}
+
 	statsCollection := client.Database(dbName).Collection(statsTable)
 	statsCollection.UpdateByID(context.Background(), params["id"],
 		bson.M{"$push": bson.M{
-			"access_times": primitive.NewDateTimeFromTime(time.Now().UTC()),
+			"access_times": primitive.NewDateTimeFromTime(now),
 		}},
 		options.Update().SetUpsert(true))
 
@@ -118,15 +125,29 @@ var URLStatsEndpoint = http.HandlerFunc(func(w http.ResponseWriter, r *http.Requ
 	statsCollection := client.Database(dbName).Collection(statsTable)
 	statsCollection.FindOne(context.Background(), idFilter).Decode(&urlStats)
 
-	start := time.Now().UTC()
-	end := start.AddDate(0, 0, -1)
+	now := time.Now().UTC()
+	day := now.AddDate(0, 0, -1)
+	week := now.AddDate(0, 0, -7)
 	dayCount := 0
+	weekCount := 0
+	allCount := 0
 
+	//todo: try this with a query instead
 	for _, d := range urlStats.AccessTimes {
-		if d.Time().After(end) {
+		if d.Time().After(day) {
 			dayCount++
+		} else if d.Time().After(week) {
+			weekCount++
 		}
+		allCount++
 	}
 
-	fmt.Println(dayCount)
+	result := map[string]int{
+		"past_day":  dayCount,
+		"past_week": weekCount + dayCount,
+		"all_time":  allCount,
+	}
+	fmt.Println(result)
+
+	handlers.SuccessResponse(result, w)
 })
