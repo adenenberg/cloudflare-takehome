@@ -3,8 +3,6 @@
 ## Design
 I chose to create a HTTP service with Golang and to use MongoDB as storage. I chose Mongo because I felt like a NoSQL db was better suited to this problem. It would allow the service to scale easily and the data doesn't have any kind of relationship that needs to be managed. I chose Mongo specifically because I felt like the document storage paradigm would work nicely for storing the URL data and statistics.
 
-I implemented...
-
 I have used Docker so that each of the pieces could be containerized and run independently. In the future, if we choose to manage the service with Kubernetes, it will allow us to easily scale the containers independently.
 
 ## Run
