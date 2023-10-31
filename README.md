@@ -17,7 +17,7 @@ To stop all running containers
 ```docker-compose down```
 
 ## Testing
-Automated tests can be run with ```go test ./...```
+With the containers up and running, please change line 17 in ```api_test.go``` to ```mongodb://root:cloudflare@localhost:27017/``` and run ```go test ./...``` for automated tests.
 
 You can use curl to manually call different endpoints in the service
 | Endpoint | Command |
