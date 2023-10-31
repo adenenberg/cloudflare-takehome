@@ -29,6 +29,9 @@ You can use curl to manually call different endpoints in the service
 
 You can visit a short link in the browser by following: ```localhost:8080/go/<short_url_key>```
 
+## Viewing data
+You can view the data stored in MongoDB by visiting ```localhost:8081``` in your browser and accessing the ```cloudflare``` DB.
+
 ## Future
 
 The current implementation of this service would be fine for small scale usage. When this service needs to scale to support millions of users, there are some changes that would need to be made.
